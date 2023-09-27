@@ -1,7 +1,11 @@
 const db = require("../models");
 const User = db.User;
 const bcrypt = require("bcrypt");
+const { validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
+const transporter = require("./../helpers/Transporter");
+const fs = require("fs");
+const handlebars = require("handlebars");
 
 const authController = {
   register: async (req, res) => {
@@ -77,6 +81,19 @@ const authController = {
         is_active: 1,
         failed_attemp: 0,
         is_admin: is_admin ? is_admin : 0,
+      });
+
+      const data = fs.readFileSync("./Template.html", {
+        encoding: "utf8",
+      });
+      const tempCompile = await handlebars.compile(data);
+      const tempResult = tempCompile({ email: email });
+
+      await transporter.sendMail({
+        from: "ariesdimasy@gmail.com",
+        to: "alhusna901@gmail.com",
+        subject: "Your account activated",
+        html: tempResult,
       });
 
       return res.status(200).json({

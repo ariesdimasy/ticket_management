@@ -1,5 +1,5 @@
 const db = require("./../models");
-
+const fs = require("fs");
 const Event = db.Event;
 
 module.exports = {
@@ -27,6 +27,11 @@ module.exports = {
       const { event_name, event_date, location, ticket_quota, price } =
         req.body;
 
+      let file = "";
+      if (req.file) {
+        file = req.file;
+      }
+
       if (!event_name || !event_date || !location || !ticket_quota || !price) {
         return res.status(400).send({
           message: "dont be lazy ! fill all required field",
@@ -41,6 +46,7 @@ module.exports = {
         ticket_quota: ticket_quota,
         price: price,
         admin_id: req.user.id,
+        event_image: file ? file?.filename : "",
       });
 
       return res.status(200).send({
@@ -71,7 +77,20 @@ module.exports = {
     try {
       const { event_id } = req.params;
 
-      const eventList = await Event.destroy({
+      const myEvent = await Event.findOne({
+        where: {
+          id: event_id,
+        },
+      });
+
+      console.log(myEvent.event_image);
+      console.log("./Public/upload/" + myEvent.event_image);
+
+      if (myEvent.event_image) {
+        fs.unlinkSync("./Public/upload/" + myEvent.event_image);
+      }
+
+      const eventDelete = await Event.destroy({
         where: {
           id: event_id,
         },
@@ -79,11 +98,11 @@ module.exports = {
 
       return res.status(200).send({
         message: "event successfully delete",
-        data: [],
+        data: eventDelete,
       });
     } catch (err) {
       return res.status(500).send({
-        message: JSON.stringify(err),
+        message: JSON.stringify(err.message),
         data: null,
       });
     }
